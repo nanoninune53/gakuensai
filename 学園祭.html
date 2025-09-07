@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学園祭マップ</title>
+    <!-- Tailwind CSS CDNを読み込み -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      // Tailwind CSSの設定をカスタマイズ
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              'food': '#FBBF24', // 飲食の色
+              'experience': '#34D399', // 体験の色
+              'room-bg': '#E5E7EB',
+              'room-border': '#9CA3AF',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #F3F4F6;
+      }
+      /* モーダルの背景 */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.75);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+      /* モーダルのコンテンツ */
+      .modal-content {
+        max-width: 90%;
+        max-height: 90%;
+        overflow-y: auto;
+      }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 flex flex-col items-center">
+
+    <!-- メインコンテナ -->
+    <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8 w-full max-w-4xl text-center">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">学園祭マップ</h1>
+        <p class="text-gray-500 mb-6 md:mb-8">各教室をタップして出店情報を確認しよう！</p>
+
+        <!-- マップコンテナ -->
+        <div id="map-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            <!-- 教室はJavaScriptで動的に追加されます -->
+        </div>
+    </div>
+
+    <!-- モーダル（最初は非表示） -->
+    <div id="modal-container" class="modal-overlay hidden">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md transform scale-95 transition-transform duration-300 ease-out">
+            <div class="flex justify-end">
+                <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div id="modal-content-details" class="text-center">
+                <!-- ここに詳細情報が表示されます -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 出店のデータ
+        const stalls = [
+            {
+                id: 'room-101',
+                name: '焼きそばフェスティバル',
+                type: '飲食',
+                details: '特製のソースとモチモチ麺が絡み合う、お祭りの定番！豚バラ肉とシャキシャキキャベツのハーモニーをお楽しみください。',
+                videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' // サンプルURL
+            },
+            {
+                id: 'room-102',
+                name: 'お化け屋敷「真夜中の囁き」',
+                type: '体験',
+                details: 'この教室には、かつての生徒の幽霊が…？勇気のある者だけが入れる、最恐のお化け屋敷。',
+                videoUrl: 'https://www.youtube.com/watch?v=FjIuK7f0TzU' // サンプルURL
+            },
+            {
+                id: 'room-103',
+                name: 'タピオカ専門店「タピタピ」',
+                type: '飲食',
+                details: 'もちもちのタピオカと濃厚ミルクティーが最高！定番のミルクティーから、フルーツタピオカまで種類豊富に取り揃えています。',
+                videoUrl: 'https://www.youtube.com/watch?v=L2GjH6g04H8' // サンプルURL
+            },
+            {
+                id: 'room-104',
+                name: 'VRゲーム「ファンタジーワールド」',
+                type: '体験',
+                details: '最新のVR技術でファンタジーの世界を冒険！ドラゴンと戦ったり、魔法を使ったり、非日常を体験できます。',
+                videoUrl: 'https://www.youtube.com/watch?v=R2g7_1B_r4c' // サンプルURL
+            },
+            {
+                id: 'room-105',
+                name: 'アメリカンドッグ専門店',
+                type: '飲食',
+                details: '外はカリカリ、中はふわふわ。選べるソースはケチャップ、マスタード、ハニーマスタードの3種類。',
+                videoUrl: 'https://www.youtube.com/watch?v=yW6R5u-8vE4' // サンプルURL
+            },
+            {
+                id: 'room-106',
+                name: '縁日ゲームコーナー',
+                type: '体験',
+                details: '射的や輪投げ、スーパーボールすくいなど、懐かしいゲームで遊ぼう！豪華景品も用意しています。',
+                videoUrl: 'https://www.youtube.com/watch?v=9jK-NcRcw2c' // サンプルURL
+            },
+            {
+                id: 'room-107',
+                name: 'フランクフルト屋台',
+                type: '飲食',
+                details: 'ジューシーなフランクフルトに、お好みのトッピングをどうぞ！チーズ、サルサ、アボカドなど。',
+                videoUrl: 'https://www.youtube.com/watch?v=33Lz-789kQc' // サンプルURL
+            },
+            {
+                id: 'room-108',
+                name: '似顔絵屋さん',
+                type: '体験',
+                details: 'あなたの特徴を捉えて、かわいらしい似顔絵をお描きします。記念に1枚いかがですか？',
+                videoUrl: 'https://www.youtube.com/watch?v=Xh0m2tE-j9k' // サンプルURL
+            }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const mapContainer = document.getElementById('map-container');
+            const modalContainer = document.getElementById('modal-container');
+            const modalDetails = document.getElementById('modal-content-details');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+
+            // 教室データをHTMLにレンダリングする関数
+            const renderMap = () => {
+                mapContainer.innerHTML = ''; // マップを一度クリア
+                stalls.forEach(stall => {
+                    const roomCard = document.createElement('div');
+                    const isFood = stall.type === '飲食';
+                    const typeColor = isFood ? 'bg-food' : 'bg-experience';
+                    const typeText = isFood ? 'text-orange-900' : 'text-green-900';
+
+                    roomCard.id = stall.id;
+                    roomCard.className = `room-card ${typeColor} cursor-pointer rounded-2xl shadow-md hover:shadow-lg transition-all transform hover:scale-105 p-4 flex flex-col justify-center items-center text-center border-2 border-room-border`;
+                    
+                    roomCard.innerHTML = `
+                        <h3 class="text-xl md:text-2xl font-bold mb-2">${stall.id.replace('room-', '教室')}</h3>
+                        <p class="text-lg font-semibold mb-1">${stall.name}</p>
+                        <span class="text-sm font-medium rounded-full px-3 py-1 ${typeColor} bg-opacity-70 ${typeText} border border-white border-opacity-50">${stall.type}</span>
+                    `;
+
+                    // クリックイベントリスナーを追加
+                    roomCard.addEventListener('click', () => showModal(stall));
+                    
+                    mapContainer.appendChild(roomCard);
+                });
+            };
+
+            // モーダルを表示する関数
+            const showModal = (stall) => {
+                modalDetails.innerHTML = `
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">${stall.name}</h2>
+                    <p class="text-base text-gray-500 mb-4">${stall.id.replace('room-', '教室')}</p>
+                    <div class="inline-block px-3 py-1 rounded-full text-white font-medium mb-4 ${stall.type === '飲食' ? 'bg-food' : 'bg-experience'}">${stall.type}</div>
+                    <p class="text-gray-700 leading-relaxed mb-6">${stall.details}</p>
+                    <a href="${stall.videoUrl}" target="_blank" class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-full shadow-lg transition-transform transform hover:scale-105">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                            <path d="M9.293 8.293a1 1 0 011.414 0l2 2a1 1 0 01-1.414 1.414L11 11.414V15a1 1 0 11-2 0v-3.586l-.293.293a1 1 0 01-1.414-1.414l2-2z" />
+                        </svg>
+                        紹介動画を見る
+                    </a>
+                `;
+                modalContainer.classList.remove('hidden');
+            };
+
+            // モーダルを閉じる関数
+            const closeModal = () => {
+                modalContainer.classList.add('hidden');
+            };
+
+            // イベントリスナー
+            closeModalBtn.addEventListener('click', closeModal);
+            modalContainer.addEventListener('click', (e) => {
+                // モーダル外をクリックした場合も閉じる
+                if (e.target === modalContainer) {
+                    closeModal();
+                }
+            });
+
+            // ページロード時にマップをレンダリング
+            renderMap();
+        });
+    </script>
+</body>
+</html>
